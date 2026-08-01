@@ -194,19 +194,22 @@ export default function Login({ onLogin }) {
 const styles = {
   pageContainer: {
     display: 'flex',
-    minHeight: '100vh',
-    width: '100vw',
+    flexWrap: 'wrap',
+    minHeight: '100dvh',
+    width: '100%',
+    overflowX: 'hidden',
     fontFamily: '"Segoe UI", Roboto, Helvetica, Arial, sans-serif',
     backgroundColor: '#ffffff',
   },
 
   /* Left Side Styling */
   leftBanner: {
-    flex: '1',
+    flex: '1 1 320px',
+    minHeight: '320px',
     backgroundColor: '#0F2C59',
     backgroundImage: 'linear-gradient(135deg, #0A1E3F 0%, #153B75 100%)',
     color: '#ffffff',
-    padding: '4rem 3.5rem',
+    padding: '2.5rem 2rem',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
@@ -242,7 +245,7 @@ const styles = {
   },
   mainHeading: {
     fontFamily: 'Georgia, serif',
-    fontSize: '2.75rem',
+    fontSize: 'clamp(2rem, 4vw, 2.75rem)',
     lineHeight: '1.2',
     fontWeight: '700',
     marginBottom: '1.5rem',
@@ -282,17 +285,18 @@ const styles = {
 
   /* Right Side Styling */
   rightSection: {
-    flex: '1',
+    flex: '1 1 360px',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
-    padding: '3rem 4rem',
+    padding: '2rem 1.5rem',
     boxSizing: 'border-box',
     backgroundColor: '#ffffff',
+    minWidth: '280px',
   },
   formContainer: {
     maxWidth: '400px',
-    margin: 'auto 0 auto 10%',
+    margin: '0 auto',
     width: '100%',
   },
   logoImage: {
@@ -431,6 +435,10 @@ const styles = {
   rightFooter: {
     display: 'flex',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '0.75rem',
+    flexWrap: 'wrap',
+    marginTop: '1.5rem',
     fontSize: '0.75rem',
     color: '#94a3b8',
   },
