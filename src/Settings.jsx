@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import './Settings.css';
+import logo from './assets/Logo.png';
+import Modal from './components/Modal.jsx';
 import {
   LayoutDashboard,
   Users,
@@ -11,11 +13,13 @@ import {
   Settings,
   LogOut,
   Search,
-  Plus,
 } from 'lucide-react';
 
 export default function SettingsPage({ onLogout, onNavigateTo }) {
   const [activeTab, setActiveTab] = useState('Settings');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalBody, setModalBody] = useState(null);
 
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, target: 'dashboard' },
@@ -33,10 +37,12 @@ export default function SettingsPage({ onLogout, onNavigateTo }) {
       <aside className="sidebar">
         <div>
           <div className="sidebar-logo-container">
-            <div className="logo-badge">☀️</div>
+            <div className="logo-badge">
+              <img src={logo} alt="BIDMS logo" />
+            </div>
             <div>
               <h1 className="brand-title">BIDMS</h1>
-              <p className="brand-subtitle">Barangay System</p>
+              <p className="brand-subtitle">Barangay Governor Boyles Ubay, Bohol System</p>
             </div>
           </div>
 
@@ -92,10 +98,6 @@ export default function SettingsPage({ onLogout, onNavigateTo }) {
               <Search className="search-icon" />
               <input type="text" placeholder="Search settings" />
             </div>
-            <button type="button" className="action-button">
-              <Plus className="search-icon" />
-              New Setting
-            </button>
           </div>
         </header>
 
@@ -146,6 +148,29 @@ export default function SettingsPage({ onLogout, onNavigateTo }) {
           </div>
         </div>
       </main>
+
+      <Modal isOpen={modalOpen} title={modalTitle} onClose={() => setModalOpen(false)}>
+        {modalBody}
+      </Modal>
     </div>
   );
 }
+
+const modalInputStyle = {
+  width: '100%',
+  padding: '10px 12px',
+  borderRadius: '8px',
+  border: '1px solid #cbd5e1',
+  marginTop: '4px',
+};
+
+const primaryButtonStyle = {
+  width: '100%',
+  padding: '10px 12px',
+  border: 'none',
+  borderRadius: '8px',
+  backgroundColor: '#0b194c',
+  color: '#ffffff',
+  cursor: 'pointer',
+  fontWeight: 600,
+};

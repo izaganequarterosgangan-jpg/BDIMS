@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import './Blotter.css';
+import logo from './assets/Logo.png';
+import Modal from './components/Modal.jsx';
 import {
   LayoutDashboard,
   Users,
@@ -28,6 +30,12 @@ const summaryCards = [
 
 export default function Blotter({ onLogout, onNavigateTo }) {
   const [activeTab, setActiveTab] = useState('Blotter');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [casesList, setCasesList] = useState(blotterCases);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalBody, setModalBody] = useState(null);
+  const [formData, setFormData] = useState({ title: 'Noise Complaint', resident: 'Roberto Lim', status: 'Open' });
 
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, target: 'dashboard' },
@@ -40,15 +48,46 @@ export default function Blotter({ onLogout, onNavigateTo }) {
     { name: 'Settings', icon: Settings, target: 'settings' },
   ];
 
+  const openModal = (title, content) => {
+    setModalTitle(title);
+    setModalBody(content);
+    setModalOpen(true);
+  };
+
+  const handleAddCase = (e) => {
+    e.preventDefault();
+    const newCase = {
+      id: `BLT-${Date.now().toString().slice(-3)}`,
+      title: formData.title,
+      resident: formData.resident,
+      date: 'Just now',
+      status: formData.status,
+    };
+    setCasesList((prev) => [newCase, ...prev]);
+    setModalOpen(false);
+  };
+
+  const filteredCases = casesList.filter((item) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      item.id.toLowerCase().includes(query) ||
+      item.title.toLowerCase().includes(query) ||
+      item.resident.toLowerCase().includes(query) ||
+      item.status.toLowerCase().includes(query)
+    );
+  });
+
   return (
     <div className="page-shell">
       <aside className="sidebar">
         <div>
           <div className="sidebar-logo-container">
-            <div className="logo-badge">☀️</div>
+            <div className="logo-badge">
+              <img src={logo} alt="BIDMS logo" />
+            </div>
             <div>
               <h1 className="brand-title">BIDMS</h1>
-              <p className="brand-subtitle">Barangay System</p>
+              <p className="brand-subtitle">Barangay Governor Boyles Ubay, Bohol System</p>
             </div>
           </div>
 
@@ -102,9 +141,14 @@ export default function Blotter({ onLogout, onNavigateTo }) {
           <div className="header-actions">
             <div className="search-box">
               <Search className="search-icon" />
-              <input type="text" placeholder="Search cases" />
+              <input
+                type="text"
+                placeholder="Search cases"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-            <button type="button" className="action-button">
+            <button type="button" className="action-button" onClick={() => openModal('Add Case', <form onSubmit={handleAddCase} style={{ display: 'grid', gap: '10px' }}><label>Incident<input value={formData.title} onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))} style={modalInputStyle} /></label><label>Resident<input value={formData.resident} onChange={(e) => setFormData((prev) => ({ ...prev, resident: e.target.value }))} style={modalInputStyle} /></label><label>Status<select value={formData.status} onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value }))} style={modalInputStyle}><option>Open</option><option>Under Review</option><option>Resolved</option></select></label><button type="submit" style={primaryButtonStyle}>Save</button></form>)}>
               <Plus className="search-icon" />
               Add Case
             </button>
@@ -146,7 +190,7 @@ export default function Blotter({ onLogout, onNavigateTo }) {
                 </tr>
               </thead>
               <tbody>
-                {blotterCases.map((item) => (
+                {filteredCases.map((item) => (
                   <tr key={item.id}>
                     <td>{item.id}</td>
                     <td>{item.title}</td>
@@ -160,6 +204,29 @@ export default function Blotter({ onLogout, onNavigateTo }) {
           </div>
         </div>
       </main>
+
+      <Modal isOpen={modalOpen} title={modalTitle} onClose={() => setModalOpen(false)}>
+        {modalBody}
+      </Modal>
     </div>
   );
 }
+
+const modalInputStyle = {
+  width: '100%',
+  padding: '10px 12px',
+  borderRadius: '8px',
+  border: '1px solid #cbd5e1',
+  marginTop: '4px',
+};
+
+const primaryButtonStyle = {
+  width: '100%',
+  padding: '10px 12px',
+  border: 'none',
+  borderRadius: '8px',
+  backgroundColor: '#0b194c',
+  color: '#ffffff',
+  cursor: 'pointer',
+  fontWeight: 600,
+};

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import './Reports.css';
+import logo from './assets/Logo.png';
+import Modal from './components/Modal.jsx';
 import {
   LayoutDashboard,
   Users,
@@ -28,6 +30,12 @@ const summaryCards = [
 
 export default function Reports({ onLogout, onNavigateTo }) {
   const [activeTab, setActiveTab] = useState('Reports');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [reportsList, setReportsList] = useState(reports);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalBody, setModalBody] = useState(null);
+  const [formData, setFormData] = useState({ title: 'Monthly Summary', date: 'Aug 1, 2026', status: 'Prepared' });
 
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, target: 'dashboard' },
@@ -40,15 +48,43 @@ export default function Reports({ onLogout, onNavigateTo }) {
     { name: 'Settings', icon: Settings, target: 'settings' },
   ];
 
+  const openModal = (title, content) => {
+    setModalTitle(title);
+    setModalBody(content);
+    setModalOpen(true);
+  };
+
+  const handleAddReport = (e) => {
+    e.preventDefault();
+    const newReport = {
+      title: formData.title,
+      date: formData.date,
+      status: formData.status,
+    };
+    setReportsList((prev) => [newReport, ...prev]);
+    setModalOpen(false);
+  };
+
+  const filteredReports = reportsList.filter((item) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      item.title.toLowerCase().includes(query) ||
+      item.date.toLowerCase().includes(query) ||
+      item.status.toLowerCase().includes(query)
+    );
+  });
+
   return (
     <div className="page-shell">
       <aside className="sidebar">
         <div>
           <div className="sidebar-logo-container">
-            <div className="logo-badge">☀️</div>
+            <div className="logo-badge">
+              <img src={logo} alt="BIDMS logo" />
+            </div>
             <div>
               <h1 className="brand-title">BIDMS</h1>
-              <p className="brand-subtitle">Barangay System</p>
+              <p className="brand-subtitle">Barangay Governor Boyles Ubay, Bohol System</p>
             </div>
           </div>
 
@@ -102,9 +138,14 @@ export default function Reports({ onLogout, onNavigateTo }) {
           <div className="header-actions">
             <div className="search-box">
               <Search className="search-icon" />
-              <input type="text" placeholder="Search reports" />
+              <input
+                type="text"
+                placeholder="Search reports"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-            <button type="button" className="action-button">
+            <button type="button" className="action-button" onClick={() => openModal('Generate Report', <form onSubmit={handleAddReport} style={{ display: 'grid', gap: '10px' }}><label>Report Name<input value={formData.title} onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))} style={modalInputStyle} /></label><label>Date<input value={formData.date} onChange={(e) => setFormData((prev) => ({ ...prev, date: e.target.value }))} style={modalInputStyle} /></label><label>Status<select value={formData.status} onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value }))} style={modalInputStyle}><option>Prepared</option><option>Pending Review</option><option>Ready</option></select></label><button type="submit" style={primaryButtonStyle}>Generate</button></form>)}>
               <Plus className="search-icon" />
               Generate
             </button>
@@ -144,7 +185,7 @@ export default function Reports({ onLogout, onNavigateTo }) {
                 </tr>
               </thead>
               <tbody>
-                {reports.map((item, index) => (
+                {filteredReports.map((item, index) => (
                   <tr key={index}>
                     <td>{item.title}</td>
                     <td>{item.date}</td>
@@ -156,6 +197,29 @@ export default function Reports({ onLogout, onNavigateTo }) {
           </div>
         </div>
       </main>
+
+      <Modal isOpen={modalOpen} title={modalTitle} onClose={() => setModalOpen(false)}>
+        {modalBody}
+      </Modal>
     </div>
   );
 }
+
+const modalInputStyle = {
+  width: '100%',
+  padding: '10px 12px',
+  borderRadius: '8px',
+  border: '1px solid #cbd5e1',
+  marginTop: '4px',
+};
+
+const primaryButtonStyle = {
+  width: '100%',
+  padding: '10px 12px',
+  border: 'none',
+  borderRadius: '8px',
+  backgroundColor: '#0b194c',
+  color: '#ffffff',
+  cursor: 'pointer',
+  fontWeight: 600,
+};

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import './Documents.css';
+import logo from './assets/Logo.png';
+import Modal from './components/Modal.jsx';
 import {
   LayoutDashboard,
   Users,
@@ -29,6 +31,12 @@ const summaryCards = [
 
 export default function Documents({ onLogout, onNavigateTo }) {
   const [activeTab, setActiveTab] = useState('Documents');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [requests, setRequests] = useState(documentRequests);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalBody, setModalBody] = useState(null);
+  const [formData, setFormData] = useState({ resident: 'Maria Santos', title: 'Barangay Clearance', status: 'Pending' });
 
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, target: 'dashboard' },
@@ -41,15 +49,46 @@ export default function Documents({ onLogout, onNavigateTo }) {
     { name: 'Settings', icon: Settings, target: 'settings' },
   ];
 
+  const openModal = (title, content) => {
+    setModalTitle(title);
+    setModalBody(content);
+    setModalOpen(true);
+  };
+
+  const handleAddRequest = (e) => {
+    e.preventDefault();
+    const newRequest = {
+      id: `DOC-${Date.now().toString().slice(-3)}`,
+      title: formData.title,
+      resident: formData.resident,
+      date: 'Just now',
+      status: formData.status,
+    };
+    setRequests((prev) => [newRequest, ...prev]);
+    setModalOpen(false);
+  };
+
+  const filteredRequests = requests.filter((item) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      item.id.toLowerCase().includes(query) ||
+      item.title.toLowerCase().includes(query) ||
+      item.resident.toLowerCase().includes(query) ||
+      item.status.toLowerCase().includes(query)
+    );
+  });
+
   return (
     <div className="page-shell">
       <aside className="sidebar">
         <div>
           <div className="sidebar-logo-container">
-            <div className="logo-badge">☀️</div>
+            <div className="logo-badge">
+              <img src={logo} alt="BIDMS logo" />
+            </div>
             <div>
               <h1 className="brand-title">BIDMS</h1>
-              <p className="brand-subtitle">Barangay System</p>
+              <p className="brand-subtitle">Barangay Governor Boyles Ubay, Bohol System</p>
             </div>
           </div>
 
@@ -103,9 +142,14 @@ export default function Documents({ onLogout, onNavigateTo }) {
           <div className="header-actions">
             <div className="search-box">
               <Search className="search-icon" />
-              <input type="text" placeholder="Search documents" />
+              <input
+                type="text"
+                placeholder="Search documents"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-            <button type="button" className="action-button">
+            <button type="button" className="action-button" onClick={() => openModal('New Request', <form onSubmit={handleAddRequest} style={{ display: 'grid', gap: '10px' }}><label>Resident<input value={formData.resident} onChange={(e) => setFormData((prev) => ({ ...prev, resident: e.target.value }))} style={modalInputStyle} /></label><label>Document Type<input value={formData.title} onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))} style={modalInputStyle} /></label><label>Status<select value={formData.status} onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value }))} style={modalInputStyle}><option>Pending</option><option>Processing</option><option>Completed</option></select></label><button type="submit" style={primaryButtonStyle}>Save</button></form>)}>
               <Plus className="search-icon" />
               New Request
             </button>
@@ -147,7 +191,7 @@ export default function Documents({ onLogout, onNavigateTo }) {
                 </tr>
               </thead>
               <tbody>
-                {documentRequests.map((item) => (
+                {filteredRequests.map((item) => (
                   <tr key={item.id}>
                     <td>{item.id}</td>
                     <td>{item.title}</td>
@@ -165,6 +209,29 @@ export default function Documents({ onLogout, onNavigateTo }) {
           </div>
         </div>
       </main>
+
+      <Modal isOpen={modalOpen} title={modalTitle} onClose={() => setModalOpen(false)}>
+        {modalBody}
+      </Modal>
     </div>
   );
 }
+
+const modalInputStyle = {
+  width: '100%',
+  padding: '10px 12px',
+  borderRadius: '8px',
+  border: '1px solid #cbd5e1',
+  marginTop: '4px',
+};
+
+const primaryButtonStyle = {
+  width: '100%',
+  padding: '10px 12px',
+  border: 'none',
+  borderRadius: '8px',
+  backgroundColor: '#0b194c',
+  color: '#ffffff',
+  cursor: 'pointer',
+  fontWeight: 600,
+};

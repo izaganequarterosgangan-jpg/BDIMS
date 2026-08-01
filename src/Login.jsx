@@ -3,6 +3,9 @@ import logoImage from './assets/Logo.png';
 
 // 1. UPDATED HERE: Added { onLogin } prop
 export default function Login({ onLogin }) {
+  const VALID_USERNAME = 'izaganequarterosgangan@gmail.com';
+  const VALID_PASSWORD = 'Password';
+
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -27,7 +30,12 @@ export default function Login({ onLogin }) {
     const password = formData.password.trim();
 
     if (!username || !password) {
-      setLoginError('Please enter both your username and password.');
+      setLoginError('Please enter both your email/username and password.');
+      return;
+    }
+
+    if (username.toLowerCase() !== VALID_USERNAME.toLowerCase() || password !== VALID_PASSWORD) {
+      setLoginError('Invalid username or password. Please use the provided credentials.');
       return;
     }
 
@@ -97,7 +105,7 @@ export default function Login({ onLogin }) {
           <form onSubmit={handleSubmit} style={styles.form}>
             {/* Username Input */}
             <div style={styles.inputGroup}>
-              <label style={styles.label}>USERNAME / EMPLOYEE ID</label>
+              <label style={styles.label}>EMAIL / USERNAME</label>
               <div style={styles.inputWrapper}>
                 <span style={styles.icon}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
@@ -105,7 +113,7 @@ export default function Login({ onLogin }) {
                 <input
                   type="text"
                   name="username"
-                  placeholder="Enter Username or Employee ID"
+                  placeholder="Enter your email or username"
                   value={formData.username}
                   onChange={handleChange}
                   style={styles.input}

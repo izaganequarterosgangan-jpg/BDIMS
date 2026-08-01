@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import './ResidentDashboard.css'; // Importing the explicit CSS stylesheet
+import logo from './assets/Logo.png';
+import Modal from './components/Modal.jsx';
 import {
   LayoutDashboard,
   Users,
@@ -28,6 +30,86 @@ const residentsData = [
 export default function ResidentDashboard({ onLogout, onBackToDashboard, onNavigateTo }) {
   const [activeTab, setActiveTab] = useState('Residents');
   const [searchQuery, setSearchQuery] = useState('');
+  const [residents, setResidents] = useState(residentsData);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalBody, setModalBody] = useState(null);
+  const [residentForm, setResidentForm] = useState({ name: '', id: '', purok: '', contact: '', status: 'Active' });
+
+  const openModal = (title, content) => {
+    setModalTitle(title);
+    setModalBody(content);
+    setModalOpen(true);
+  };
+
+  const handleAddResident = (e) => {
+    e.preventDefault();
+    const newResident = {
+      id: residentForm.id || `RES-${Date.now().toString().slice(-3)}`,
+      name: residentForm.name || 'New Resident',
+      since: 'Just added',
+      initials: residentForm.name.split(' ').slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'NR',
+      ageSex: 'N/A',
+      purok: residentForm.purok || 'Purok 1',
+      contact: residentForm.contact || 'N/A',
+      voter: false,
+      status: residentForm.status,
+      avatarClass: 'bg-amber-avatar',
+    };
+    setResidents((prev) => [newResident, ...prev]);
+    setModalOpen(false);
+  };
+
+  const filteredResidents = residents.filter((resident) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      resident.name.toLowerCase().includes(query) ||
+      resident.id.toLowerCase().includes(query) ||
+      resident.purok.toLowerCase().includes(query)
+    );
+  });
+
+  const handleEditResident = (row) => {
+    openModal(
+      'Edit Resident',
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const form = e.currentTarget;
+          const updatedName = form.name.value || row.name;
+          const updatedContact = form.contact.value || row.contact;
+          const updatedStatus = form.status.value || row.status;
+
+          setResidents((prev) =>
+            prev.map((item) =>
+              item.id === row.id
+                ? { ...item, name: updatedName, contact: updatedContact, status: updatedStatus }
+                : item
+            )
+          );
+          setModalOpen(false);
+        }}
+        style={{ display: 'grid', gap: '10px' }}
+      >
+        <label>
+          Full Name
+          <input name="name" defaultValue={row.name} style={modalInputStyle} />
+        </label>
+        <label>
+          Contact
+          <input name="contact" defaultValue={row.contact} style={modalInputStyle} />
+        </label>
+        <label>
+          Status
+          <select name="status" defaultValue={row.status} style={modalInputStyle}>
+            <option>Active</option>
+            <option>Inactive</option>
+          </select>
+        </label>
+        <button type="submit" style={primaryButtonStyle}>Update</button>
+      </form>
+    );
+  };
 
   return (
     <div className="resident-container">
@@ -37,10 +119,12 @@ export default function ResidentDashboard({ onLogout, onBackToDashboard, onNavig
         <div>
           {/* Logo Header */}
           <div className="sidebar-logo-container">
-            <div className="logo-badge">☀️</div>
+            <div className="logo-badge">
+              <img src={logo} alt="BIDMS logo" />
+            </div>
             <div>
               <h1 className="brand-title">BIDMS</h1>
-              <p className="brand-subtitle">Barangay System</p>
+              <p className="brand-subtitle">Barangay Governor Boyles Ubay, Bohol System</p>
             </div>
           </div>
 
@@ -128,15 +212,17 @@ export default function ResidentDashboard({ onLogout, onBackToDashboard, onNavig
               />
             </div>
 
-            {/* Notification Bell */}
-            <button className="notification-button">
-              <Bell style={{ width: '16px', height: '16px' }} />
-              <span className="dot-notification"></span>
-            </button>
+            <div className="header-user-actions">
+              {/* Notification Bell */}
+              <button className="notification-button" title="Notifications">
+                <Bell style={{ width: '16px', height: '16px' }} />
+                <span className="dot-notification"></span>
+              </button>
 
-            {/* Profile Avatar */}
-            <div className="header-avatar">
-              JC
+              {/* Profile Avatar */}
+              <div className="header-avatar" title="Juan Cruz">
+                JC
+              </div>
             </div>
           </div>
         </header>
@@ -150,7 +236,7 @@ export default function ResidentDashboard({ onLogout, onBackToDashboard, onNavig
               <h3 className="registry-title">Resident Registry</h3>
               <p className="registry-subtitle">12 total registered residents</p>
             </div>
-            <button className="btn-add-resident">
+            <button className="btn-add-resident" onClick={() => openModal('Add Resident', <form onSubmit={handleAddResident} style={{ display: 'grid', gap: '10px' }}><label>Full Name<input value={residentForm.name} onChange={(e) => setResidentForm((prev) => ({ ...prev, name: e.target.value }))} placeholder="Juan dela Cruz" style={modalInputStyle} /></label><label>Resident ID<input value={residentForm.id} onChange={(e) => setResidentForm((prev) => ({ ...prev, id: e.target.value }))} placeholder="RES-007" style={modalInputStyle} /></label><label>Purok<input value={residentForm.purok} onChange={(e) => setResidentForm((prev) => ({ ...prev, purok: e.target.value }))} placeholder="Purok 3" style={modalInputStyle} /></label><label>Contact<input value={residentForm.contact} onChange={(e) => setResidentForm((prev) => ({ ...prev, contact: e.target.value }))} placeholder="0917xxxxxxx" style={modalInputStyle} /></label><label>Status<select value={residentForm.status} onChange={(e) => setResidentForm((prev) => ({ ...prev, status: e.target.value }))} style={modalInputStyle}><option>Active</option><option>Inactive</option></select></label><button type="submit" style={primaryButtonStyle}>Save Resident</button></form>)}>
               <Plus style={{ width: '16px', height: '16px' }} />
               <span>Add Resident</span>
             </button>
@@ -227,7 +313,7 @@ export default function ResidentDashboard({ onLogout, onBackToDashboard, onNavig
                   </tr>
                 </thead>
                 <tbody>
-                  {residentsData.map((row) => (
+                  {filteredResidents.map((row) => (
                     <tr key={row.id}>
                       <td className="resident-id-col">{row.id}</td>
                       <td>
@@ -260,9 +346,9 @@ export default function ResidentDashboard({ onLogout, onBackToDashboard, onNavig
                         </span>
                       </td>
                       <td className="action-buttons">
-                        <button className="btn-action">View</button>
+                        <button className="btn-action" onClick={() => openModal('Resident Details', <div style={{ display: 'grid', gap: '10px' }}><p><strong>Name:</strong> {row.name}</p><p><strong>ID:</strong> {row.id}</p><p><strong>Contact:</strong> {row.contact}</p><p><strong>Status:</strong> {row.status}</p></div>)}>View</button>
                         <span className="action-divider">·</span>
-                        <button className="btn-action">Edit</button>
+                        <button className="btn-action" onClick={() => handleEditResident(row)}>Edit</button>
                       </td>
                     </tr>
                   ))}
@@ -275,6 +361,28 @@ export default function ResidentDashboard({ onLogout, onBackToDashboard, onNavig
         </div>
       </main>
 
+      <Modal isOpen={modalOpen} title={modalTitle} onClose={() => setModalOpen(false)}>
+        {modalBody}
+      </Modal>
     </div>
   );
 }
+
+const modalInputStyle = {
+  width: '100%',
+  padding: '10px 12px',
+  borderRadius: '8px',
+  border: '1px solid #cbd5e1',
+  marginTop: '4px',
+};
+
+const primaryButtonStyle = {
+  width: '100%',
+  padding: '10px 12px',
+  border: 'none',
+  borderRadius: '8px',
+  backgroundColor: '#0b194c',
+  color: '#ffffff',
+  cursor: 'pointer',
+  fontWeight: 600,
+};

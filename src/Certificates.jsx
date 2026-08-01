@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import './Certificates.css';
+import logo from './assets/Logo.png';
+import Modal from './components/Modal.jsx';
 import {
   LayoutDashboard,
   Users,
@@ -29,6 +31,12 @@ const summaryCards = [
 
 export default function Certificates({ onLogout, onNavigateTo }) {
   const [activeTab, setActiveTab] = useState('Certificates');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [certificatesList, setCertificatesList] = useState(certificates);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalBody, setModalBody] = useState(null);
+  const [formData, setFormData] = useState({ resident: 'Maria Santos', title: 'Barangay Clearance', status: 'Ready' });
 
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, target: 'dashboard' },
@@ -41,15 +49,46 @@ export default function Certificates({ onLogout, onNavigateTo }) {
     { name: 'Settings', icon: Settings, target: 'settings' },
   ];
 
+  const openModal = (title, content) => {
+    setModalTitle(title);
+    setModalBody(content);
+    setModalOpen(true);
+  };
+
+  const handleAddCertificate = (e) => {
+    e.preventDefault();
+    const newCertificate = {
+      id: `CERT-${Date.now().toString().slice(-3)}`,
+      title: formData.title,
+      resident: formData.resident,
+      issued: 'Just now',
+      status: formData.status,
+    };
+    setCertificatesList((prev) => [newCertificate, ...prev]);
+    setModalOpen(false);
+  };
+
+  const filteredCertificates = certificatesList.filter((item) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      item.id.toLowerCase().includes(query) ||
+      item.title.toLowerCase().includes(query) ||
+      item.resident.toLowerCase().includes(query) ||
+      item.status.toLowerCase().includes(query)
+    );
+  });
+
   return (
     <div className="page-shell">
       <aside className="sidebar">
         <div>
           <div className="sidebar-logo-container">
-            <div className="logo-badge">☀️</div>
+            <div className="logo-badge">
+              <img src={logo} alt="BIDMS logo" />
+            </div>
             <div>
               <h1 className="brand-title">BIDMS</h1>
-              <p className="brand-subtitle">Barangay System</p>
+              <p className="brand-subtitle">Barangay Governor Boyles Ubay, Bohol System</p>
             </div>
           </div>
 
@@ -103,9 +142,14 @@ export default function Certificates({ onLogout, onNavigateTo }) {
           <div className="header-actions">
             <div className="search-box">
               <Search className="search-icon" />
-              <input type="text" placeholder="Search certificates" />
+              <input
+                type="text"
+                placeholder="Search certificates"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-            <button type="button" className="action-button">
+            <button type="button" className="action-button" onClick={() => openModal('Issue Certificate', <form onSubmit={handleAddCertificate} style={{ display: 'grid', gap: '10px' }}><label>Resident<input value={formData.resident} onChange={(e) => setFormData((prev) => ({ ...prev, resident: e.target.value }))} style={modalInputStyle} /></label><label>Certificate Type<input value={formData.title} onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))} style={modalInputStyle} /></label><label>Status<select value={formData.status} onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value }))} style={modalInputStyle}><option>Ready</option><option>Printed</option><option>Pending</option></select></label><button type="submit" style={primaryButtonStyle}>Save</button></form>)}>
               <Plus className="search-icon" />
               Issue Certificate
             </button>
@@ -147,7 +191,7 @@ export default function Certificates({ onLogout, onNavigateTo }) {
                 </tr>
               </thead>
               <tbody>
-                {certificates.map((item) => (
+                {filteredCertificates.map((item) => (
                   <tr key={item.id}>
                     <td>{item.id}</td>
                     <td>{item.title}</td>
@@ -161,6 +205,29 @@ export default function Certificates({ onLogout, onNavigateTo }) {
           </div>
         </div>
       </main>
+
+      <Modal isOpen={modalOpen} title={modalTitle} onClose={() => setModalOpen(false)}>
+        {modalBody}
+      </Modal>
     </div>
   );
 }
+
+const modalInputStyle = {
+  width: '100%',
+  padding: '10px 12px',
+  borderRadius: '8px',
+  border: '1px solid #cbd5e1',
+  marginTop: '4px',
+};
+
+const primaryButtonStyle = {
+  width: '100%',
+  padding: '10px 12px',
+  border: 'none',
+  borderRadius: '8px',
+  backgroundColor: '#0b194c',
+  color: '#ffffff',
+  cursor: 'pointer',
+  fontWeight: 600,
+};

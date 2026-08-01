@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import './Announcements.css';
+import logo from './assets/Logo.png';
+import Modal from './components/Modal.jsx';
 import {
   LayoutDashboard,
   Users,
@@ -28,6 +30,12 @@ const summaryCards = [
 
 export default function Announcements({ onLogout, onNavigateTo }) {
   const [activeTab, setActiveTab] = useState('Announcements');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [posts, setPosts] = useState(announcements);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalBody, setModalBody] = useState(null);
+  const [formData, setFormData] = useState({ title: 'Barangay Cleanup Drive', date: 'Aug 5, 2026', priority: 'High' });
 
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, target: 'dashboard' },
@@ -40,15 +48,43 @@ export default function Announcements({ onLogout, onNavigateTo }) {
     { name: 'Settings', icon: Settings, target: 'settings' },
   ];
 
+  const openModal = (title, content) => {
+    setModalTitle(title);
+    setModalBody(content);
+    setModalOpen(true);
+  };
+
+  const handleAddPost = (e) => {
+    e.preventDefault();
+    const newPost = {
+      title: formData.title,
+      date: formData.date,
+      priority: formData.priority,
+    };
+    setPosts((prev) => [newPost, ...prev]);
+    setModalOpen(false);
+  };
+
+  const filteredAnnouncements = posts.filter((item) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      item.title.toLowerCase().includes(query) ||
+      item.date.toLowerCase().includes(query) ||
+      item.priority.toLowerCase().includes(query)
+    );
+  });
+
   return (
     <div className="page-shell">
       <aside className="sidebar">
         <div>
           <div className="sidebar-logo-container">
-            <div className="logo-badge">☀️</div>
+            <div className="logo-badge">
+              <img src={logo} alt="BIDMS logo" />
+            </div>
             <div>
               <h1 className="brand-title">BIDMS</h1>
-              <p className="brand-subtitle">Barangay System</p>
+              <p className="brand-subtitle">Barangay Governor Boyles Ubay, Bohol System</p>
             </div>
           </div>
 
@@ -102,9 +138,14 @@ export default function Announcements({ onLogout, onNavigateTo }) {
           <div className="header-actions">
             <div className="search-box">
               <Search className="search-icon" />
-              <input type="text" placeholder="Search announcements" />
+              <input
+                type="text"
+                placeholder="Search announcements"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-            <button type="button" className="action-button">
+            <button type="button" className="action-button" onClick={() => openModal('New Announcement', <form onSubmit={handleAddPost} style={{ display: 'grid', gap: '10px' }}><label>Title<input value={formData.title} onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))} style={modalInputStyle} /></label><label>Date<input value={formData.date} onChange={(e) => setFormData((prev) => ({ ...prev, date: e.target.value }))} style={modalInputStyle} /></label><label>Priority<select value={formData.priority} onChange={(e) => setFormData((prev) => ({ ...prev, priority: e.target.value }))} style={modalInputStyle}><option>High</option><option>Medium</option><option>Low</option></select></label><button type="submit" style={primaryButtonStyle}>Publish</button></form>)}>
               <Plus className="search-icon" />
               New Post
             </button>
@@ -144,7 +185,7 @@ export default function Announcements({ onLogout, onNavigateTo }) {
                 </tr>
               </thead>
               <tbody>
-                {announcements.map((item, index) => (
+                {filteredAnnouncements.map((item, index) => (
                   <tr key={index}>
                     <td>{item.title}</td>
                     <td>{item.date}</td>
@@ -156,6 +197,29 @@ export default function Announcements({ onLogout, onNavigateTo }) {
           </div>
         </div>
       </main>
+
+      <Modal isOpen={modalOpen} title={modalTitle} onClose={() => setModalOpen(false)}>
+        {modalBody}
+      </Modal>
     </div>
   );
 }
+
+const modalInputStyle = {
+  width: '100%',
+  padding: '10px 12px',
+  borderRadius: '8px',
+  border: '1px solid #cbd5e1',
+  marginTop: '4px',
+};
+
+const primaryButtonStyle = {
+  width: '100%',
+  padding: '10px 12px',
+  border: 'none',
+  borderRadius: '8px',
+  backgroundColor: '#0b194c',
+  color: '#ffffff',
+  cursor: 'pointer',
+  fontWeight: 600,
+};

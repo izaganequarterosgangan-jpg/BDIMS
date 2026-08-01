@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import './Dashboard.css';
+import logo from './assets/Logo.png';
+import Modal from './components/Modal.jsx';
 import {
   LayoutDashboard,
   Users,
@@ -32,6 +34,11 @@ const quickActions = [
 export default function Dashboard({ onLogout, onNavigateResidents, onNavigateTo }) {
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [searchValue, setSearchValue] = useState('');
+  const [requests, setRequests] = useState(tableData);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalBody, setModalBody] = useState(null);
+  const [requestForm, setRequestForm] = useState({ residentName: 'Maria Santos', documentType: 'Barangay Clearance', purpose: 'For school requirement' });
 
   const handleNavigate = (name, target) => {
     setActiveTab(name);
@@ -42,7 +49,49 @@ export default function Dashboard({ onLogout, onNavigateResidents, onNavigateTo 
     }
   };
 
-  const filteredRequests = tableData.filter((item) => {
+  const openModal = (title, content) => {
+    setModalTitle(title);
+    setModalBody(content);
+    setModalOpen(true);
+  };
+
+  const handleCreateRequest = (e) => {
+    e.preventDefault();
+    const newRequest = {
+      id: `REQ-${Date.now().toString().slice(-4)}`,
+      name: requestForm.residentName || 'New Resident',
+      avatar: requestForm.residentName.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase(),
+      type: requestForm.documentType || 'Barangay Clearance',
+      date: 'Just now',
+      status: 'Pending',
+      statusClass: 'status-pending',
+    };
+    setRequests((prev) => [newRequest, ...prev]);
+    setModalOpen(false);
+  };
+
+  const handleQuickAction = (action) => {
+    if (action.target === 'residents') {
+      onNavigateResidents?.();
+      return;
+    }
+
+    if (action.label === 'Issue Barangay Clearance') {
+      openModal('New Document Request', <form onSubmit={handleCreateRequest} style={{ display: 'grid', gap: '10px' }}><label>Resident Name<input value={requestForm.residentName} onChange={(e) => setRequestForm((prev) => ({ ...prev, residentName: e.target.value }))} style={modalInputStyle} /></label><label>Document Type<input value={requestForm.documentType} onChange={(e) => setRequestForm((prev) => ({ ...prev, documentType: e.target.value }))} style={modalInputStyle} /></label><label>Purpose<input value={requestForm.purpose} onChange={(e) => setRequestForm((prev) => ({ ...prev, purpose: e.target.value }))} style={modalInputStyle} /></label><button type="submit" style={primaryButtonStyle}>Save Request</button></form>);
+      return;
+    }
+
+    if (action.label === 'Post Announcement') {
+      openModal('Create Announcement', <div style={{ display: 'grid', gap: '10px' }}><label>Title<input placeholder="Barangay cleanup drive" style={modalInputStyle} /></label><label>Message<textarea placeholder="Share the announcement details here" style={{ ...modalInputStyle, minHeight: '90px' }} /></label><button type="button" onClick={() => setModalOpen(false)} style={primaryButtonStyle}>Publish</button></div>);
+      return;
+    }
+
+    if (action.target) {
+      onNavigateTo?.(action.target);
+    }
+  };
+
+  const filteredRequests = requests.filter((item) => {
     const query = searchValue.toLowerCase();
     return (
       item.name.toLowerCase().includes(query) ||
@@ -56,10 +105,12 @@ export default function Dashboard({ onLogout, onNavigateResidents, onNavigateTo 
       <aside className="sidebar">
         <div>
           <div className="sidebar-logo-container">
-            <div className="logo-badge">☀️</div>
+            <div className="logo-badge">
+              <img src={logo} alt="BIDMS logo" />
+            </div>
             <div>
               <h1 className="brand-title">BIDMS</h1>
-              <p className="brand-subtitle">Barangay System</p>
+              <p className="brand-subtitle">Barangay Governor Boyles Ubay, Bohol System</p>
             </div>
           </div>
 
@@ -134,12 +185,14 @@ export default function Dashboard({ onLogout, onNavigateResidents, onNavigateTo 
               />
             </div>
 
-            <button className="notification-button" type="button">
-              <Bell style={{ width: '16px', height: '16px' }} />
-              <span className="dot-notification"></span>
-            </button>
+            <div className="header-user-actions">
+              <button className="notification-button" type="button" title="Notifications">
+                <Bell style={{ width: '16px', height: '16px' }} />
+                <span className="dot-notification"></span>
+              </button>
 
-            <div className="header-avatar">JC</div>
+              <div className="header-avatar" title="Juan Cruz">JC</div>
+            </div>
           </div>
         </header>
 
@@ -151,11 +204,11 @@ export default function Dashboard({ onLogout, onNavigateResidents, onNavigateTo 
               <p>34 document requests need your attention today.</p>
             </div>
             <div className="hero-actions">
-              <button className="primary-btn" type="button">
+              <button className="primary-btn" type="button" onClick={() => openModal('New Document Request', <form onSubmit={handleCreateRequest} style={{ display: 'grid', gap: '10px' }}><label>Resident Name<input value={requestForm.residentName} onChange={(e) => setRequestForm((prev) => ({ ...prev, residentName: e.target.value }))} style={modalInputStyle} /></label><label>Document Type<input value={requestForm.documentType} onChange={(e) => setRequestForm((prev) => ({ ...prev, documentType: e.target.value }))} style={modalInputStyle} /></label><label>Purpose<input value={requestForm.purpose} onChange={(e) => setRequestForm((prev) => ({ ...prev, purpose: e.target.value }))} style={modalInputStyle} /></label><button type="submit" style={primaryButtonStyle}>Save Request</button></form>)}>
                 <Plus size={16} />
                 New Request
               </button>
-              <button className="secondary-btn" type="button">View Pending</button>
+              <button className="secondary-btn" type="button" onClick={() => openModal('Pending Requests', <div style={{ display: 'grid', gap: '8px' }}>{requests.filter((item) => item.status === 'Pending').map((item) => <div key={item.id} style={{ padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '8px' }}><strong>{item.type}</strong><div>{item.name}</div></div>)}</div>)}>View Pending</button>
             </div>
           </section>
 
@@ -242,13 +295,7 @@ export default function Dashboard({ onLogout, onNavigateResidents, onNavigateTo 
                     key={action.label}
                     className="action-btn"
                     type="button"
-                    onClick={() => {
-                      if (action.target === 'residents') {
-                        onNavigateResidents?.();
-                      } else {
-                        onNavigateTo?.(action.target);
-                      }
-                    }}
+                    onClick={() => handleQuickAction(action)}
                   >
                     <span className="action-icon">{action.icon}</span>
                     <span>{action.label}</span>
@@ -259,6 +306,10 @@ export default function Dashboard({ onLogout, onNavigateResidents, onNavigateTo 
           </section>
         </div>
       </main>
+
+      <Modal isOpen={modalOpen} title={modalTitle} onClose={() => setModalOpen(false)}>
+        {modalBody}
+      </Modal>
     </div>
   );
 }
