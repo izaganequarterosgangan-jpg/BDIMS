@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Documents.css';
 import logo from './assets/Logo.png';
 import Modal from './components/Modal.jsx';
@@ -14,29 +14,48 @@ import {
   LogOut,
   Search,
   Plus,
+  Printer,
+  Eye,
+  Edit,
 } from 'lucide-react';
 
-const documentRequests = [
+const initialRequests = [
   { id: 'DOC-101', title: 'Barangay Clearance', resident: 'Maria Santos', date: 'Aug 1, 2026', status: 'Pending' },
   { id: 'DOC-102', title: 'Certificate of Residency', resident: 'Juan dela Cruz', date: 'Aug 1, 2026', status: 'Processing' },
   { id: 'DOC-103', title: 'Business Permit', resident: 'Ana Reyes', date: 'Jul 31, 2026', status: 'Completed' },
   { id: 'DOC-104', title: 'Indigency Certificate', resident: 'Roberto Lim', date: 'Jul 30, 2026', status: 'Pending' },
 ];
 
-const summaryCards = [
-  { label: 'Pending', value: '12', tone: 'warning' },
-  { label: 'Processing', value: '8', tone: 'info' },
-  { label: 'Completed', value: '24', tone: 'success' },
-];
-
 export default function Documents({ onLogout, onNavigateTo }) {
   const [activeTab, setActiveTab] = useState('Documents');
   const [searchQuery, setSearchQuery] = useState('');
-  const [requests, setRequests] = useState(documentRequests);
+  
+  // Persistent State Sync via LocalStorage (Shares data seamlessly with Certificates page)
+  const [requests, setRequests] = useState(() => {
+    const saved = localStorage.getItem('bidms_document_requests');
+    return saved ? JSON.parse(saved) : initialRequests;
+  });
+
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
   const [modalBody, setModalBody] = useState(null);
-  const [formData, setFormData] = useState({ resident: 'Maria Santos', title: 'Barangay Clearance', status: 'Pending' });
+
+  // Dynamic Form State
+  const [formData, setFormData] = useState({
+    resident: '',
+    title: 'Barangay Clearance',
+    status: 'Pending',
+  });
+
+  // Sync to LocalStorage on state change
+  useEffect(() => {
+    localStorage.setItem('bidms_document_requests', JSON.stringify(requests));
+  }, [requests]);
+
+  // Calculated Real-Time Summary Counters
+  const pendingCount = requests.filter((r) => r.status === 'Pending').length;
+  const processingCount = requests.filter((r) => r.status === 'Processing').length;
+  const completedCount = requests.filter((r) => r.status === 'Completed').length;
 
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, target: 'dashboard' },
@@ -49,23 +68,136 @@ export default function Documents({ onLogout, onNavigateTo }) {
     { name: 'Settings', icon: Settings, target: 'settings' },
   ];
 
-  const openModal = (title, content) => {
-    setModalTitle(title);
-    setModalBody(content);
+  const handleAddRequestSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.resident.trim()) return;
+
+    const today = new Date().toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+
+    const newRequest = {
+      id: `DOC-${Math.floor(100 + Math.random() * 900)}`,
+      title: formData.title,
+      resident: formData.resident,
+      date: today,
+      status: formData.status,
+    };
+
+    setRequests((prev) => [newRequest, ...prev]);
+    setFormData({ resident: '', title: 'Barangay Clearance', status: 'Pending' });
+    setModalOpen(false);
+  };
+
+  const handleStatusChange = (requestId, newStatus) => {
+    setRequests((prev) =>
+      prev.map((req) => (req.id === requestId ? { ...req, status: newStatus } : req))
+    );
+    setModalOpen(false);
+  };
+
+  const openNewRequestModal = () => {
+    setModalTitle('Create New Document Request');
+    setModalBody(
+      <form onSubmit={handleAddRequestSubmit} className="modal-form">
+        <div className="form-group">
+          <label>Resident Full Name</label>
+          <input
+            type="text"
+            required
+            placeholder="e.g. Maria Santos"
+            value={formData.resident}
+            onChange={(e) => setFormData((prev) => ({ ...prev, resident: e.target.value }))}
+            className="modal-input"
+          />
+        </div>
+        <div className="form-group">
+          <label>Document Type</label>
+          <select
+            value={formData.title}
+            onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
+            className="modal-input"
+          >
+            <option value="Barangay Clearance">Barangay Clearance</option>
+            <option value="Certificate of Residency">Certificate of Residency</option>
+            <option value="Business Permit">Business Permit</option>
+            <option value="Indigency Certificate">Indigency Certificate</option>
+          </select>
+        </div>
+        <div className="form-group">
+          <label>Initial Status</label>
+          <select
+            value={formData.status}
+            onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value }))}
+            className="modal-input"
+          >
+            <option value="Pending">Pending</option>
+            <option value="Processing">Processing</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+        <button type="submit" className="primary-modal-btn">
+          Add Request
+        </button>
+      </form>
+    );
     setModalOpen(true);
   };
 
-  const handleAddRequest = (e) => {
-    e.preventDefault();
-    const newRequest = {
-      id: `DOC-${Date.now().toString().slice(-3)}`,
-      title: formData.title,
-      resident: formData.resident,
-      date: 'Just now',
-      status: formData.status,
-    };
-    setRequests((prev) => [newRequest, ...prev]);
-    setModalOpen(false);
+  const openEditModal = (item) => {
+    setModalTitle(`Update Request: ${item.id}`);
+    setModalBody(
+      <div className="modal-form">
+        <p><strong>Resident:</strong> {item.resident}</p>
+        <p><strong>Document:</strong> {item.title}</p>
+        <div className="form-group">
+          <label>Update Status</label>
+          <select
+            defaultValue={item.status}
+            onChange={(e) => handleStatusChange(item.id, e.target.value)}
+            className="modal-input"
+          >
+            <option value="Pending">Pending</option>
+            <option value="Processing">Processing</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+      </div>
+    );
+    setModalOpen(true);
+  };
+
+  const openPreviewModal = (item) => {
+    setModalTitle(`Document Preview - ${item.id}`);
+    setModalBody(
+      <div className="certificate-preview-box">
+        <div className="cert-header">
+          <h3>REPUBLIC OF THE PHILIPPINES</h3>
+          <p>Province of Bohol | Municipality of Ubay</p>
+          <h4>BARANGAY GOVERNOR BOYLES</h4>
+        </div>
+        <hr className="cert-divider" />
+        <div className="cert-body">
+          <h5>OFFICIAL CERTIFICATION</h5>
+          <p>
+            This is to certify that <strong>{item.resident}</strong> is a bonafide resident of 
+            Barangay Governor Boyles, Ubay, Bohol.
+          </p>
+          <p>Issued for purpose of: <strong>{item.title}</strong>.</p>
+          <p className="cert-date">Date Issued: {item.date}</p>
+        </div>
+        <div className="cert-footer">
+          <p><strong>HON. JUAN CRUZ</strong></p>
+          <span>Barangay Captain / Secretary</span>
+        </div>
+        <button type="button" className="primary-modal-btn print-btn" onClick={() => window.print()}>
+          <Printer className="btn-icon" /> Print / Export Document
+        </button>
+      </div>
+    );
+    setModalOpen(true);
   };
 
   const filteredRequests = requests.filter((item) => {
@@ -144,13 +276,13 @@ export default function Documents({ onLogout, onNavigateTo }) {
               <Search className="search-icon" />
               <input
                 type="text"
-                placeholder="Search documents"
+                placeholder="Search documents..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <button type="button" className="action-button" onClick={() => openModal('New Request', <form onSubmit={handleAddRequest} style={{ display: 'grid', gap: '10px' }}><label>Resident<input value={formData.resident} onChange={(e) => setFormData((prev) => ({ ...prev, resident: e.target.value }))} style={modalInputStyle} /></label><label>Document Type<input value={formData.title} onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))} style={modalInputStyle} /></label><label>Status<select value={formData.status} onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value }))} style={modalInputStyle}><option>Pending</option><option>Processing</option><option>Completed</option></select></label><button type="submit" style={primaryButtonStyle}>Save</button></form>)}>
-              <Plus className="search-icon" />
+            <button type="button" className="action-button" onClick={openNewRequestModal}>
+              <Plus className="btn-icon" />
               New Request
             </button>
           </div>
@@ -160,25 +292,37 @@ export default function Documents({ onLogout, onNavigateTo }) {
           <div className="hero-card">
             <div>
               <p className="eyebrow">DOCUMENT CENTER</p>
-              <h3>24 active document requests</h3>
+              <h3>{requests.length} total document requests</h3>
               <p>Pending, processing, and completed requests are tracked here for fast follow-up.</p>
             </div>
             <div className="pill">Updated today</div>
           </div>
 
           <div className="stats-row">
-            {summaryCards.map((item) => (
-              <div key={item.label} className={`mini-card ${item.tone}`}>
-                <span className="mini-label">{item.label}</span>
-                <strong>{item.value}</strong>
-              </div>
-            ))}
+            <div className="mini-card warning">
+              <span className="mini-label">PENDING</span>
+              <strong>{pendingCount}</strong>
+            </div>
+            <div className="mini-card info">
+              <span className="mini-label">PROCESSING</span>
+              <strong>{processingCount}</strong>
+            </div>
+            <div className="mini-card success">
+              <span className="mini-label">COMPLETED</span>
+              <strong>{completedCount}</strong>
+            </div>
           </div>
 
           <div className="table-card">
             <div className="table-header">
               <h4>Recent Requests</h4>
-              <button type="button" className="secondary-btn">View All</button>
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={() => onNavigateTo?.('certificates')}
+              >
+                View Certificates
+              </button>
             </div>
             <table className="custom-table">
               <thead>
@@ -188,19 +332,48 @@ export default function Documents({ onLogout, onNavigateTo }) {
                   <th>Resident</th>
                   <th>Date</th>
                   <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredRequests.map((item) => (
                   <tr key={item.id}>
-                    <td>{item.id}</td>
+                    <td><strong>{item.id}</strong></td>
                     <td>{item.title}</td>
                     <td>{item.resident}</td>
                     <td>{item.date}</td>
                     <td>
-                      <span className={`status-pill ${item.status === 'Completed' ? 'status-complete' : item.status === 'Pending' ? 'status-pending' : 'status-processing'}`}>
+                      <span
+                        className={`status-pill ${
+                          item.status === 'Completed'
+                            ? 'status-complete'
+                            : item.status === 'Pending'
+                            ? 'status-pending'
+                            : 'status-processing'
+                        }`}
+                      >
                         {item.status}
                       </span>
+                    </td>
+                    <td>
+                      <div className="action-cell">
+                        <button
+                          type="button"
+                          className="icon-btn edit"
+                          onClick={() => openEditModal(item)}
+                          title="Edit Status"
+                        >
+                          <Edit className="action-icon" />
+                        </button>
+                        <button
+                          type="button"
+                          className="icon-btn preview"
+                          onClick={() => openPreviewModal(item)}
+                          title="Preview & Print"
+                        >
+                          <Eye className="action-icon" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -216,22 +389,3 @@ export default function Documents({ onLogout, onNavigateTo }) {
     </div>
   );
 }
-
-const modalInputStyle = {
-  width: '100%',
-  padding: '10px 12px',
-  borderRadius: '8px',
-  border: '1px solid #cbd5e1',
-  marginTop: '4px',
-};
-
-const primaryButtonStyle = {
-  width: '100%',
-  padding: '10px 12px',
-  border: 'none',
-  borderRadius: '8px',
-  backgroundColor: '#0b194c',
-  color: '#ffffff',
-  cursor: 'pointer',
-  fontWeight: 600,
-};

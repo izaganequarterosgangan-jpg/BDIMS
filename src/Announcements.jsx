@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import './Announcements.css';
 import logo from './assets/Logo.png';
 import Modal from './components/Modal.jsx';
@@ -16,26 +16,38 @@ import {
   Plus,
 } from 'lucide-react';
 
-const announcements = [
-  { title: 'Barangay Cleanup Drive', date: 'Aug 5, 2026', priority: 'High' },
-  { title: 'Senior Citizen Benefits Seminar', date: 'Aug 8, 2026', priority: 'Medium' },
-  { title: 'Health Check Day', date: 'Aug 12, 2026', priority: 'Low' },
-];
-
-const summaryCards = [
-  { label: 'Scheduled', value: '3', tone: 'info' },
-  { label: 'High Priority', value: '1', tone: 'warning' },
-  { label: 'Residents Reach', value: '1.2K', tone: 'success' },
+const initialAnnouncements = [
+  {
+    id: '1',
+    title: 'Barangay Cleanup Drive',
+    purpose: 'Community sanitation and clearing of drainage waterways ahead of rainy season.',
+    targetAudience: 'All Barangay Residents',
+    date: 'Aug 5, 2026',
+    priority: 'High',
+  },
+  {
+    id: '2',
+    title: 'Senior Citizen Benefits Seminar',
+    purpose: 'Orientation on new healthcare subsidies and monthly pension distribution guidelines.',
+    targetAudience: 'Senior Citizens & Caregivers',
+    date: 'Aug 8, 2026',
+    priority: 'Medium',
+  },
+  {
+    id: '3',
+    title: 'Health Check Day',
+    purpose: 'Free blood pressure monitoring, dental checkups, and basic vitamins allocation.',
+    targetAudience: 'General Public',
+    date: 'Aug 12, 2026',
+    priority: 'Low',
+  },
 ];
 
 export default function Announcements({ onLogout, onNavigateTo }) {
   const [activeTab, setActiveTab] = useState('Announcements');
   const [searchQuery, setSearchQuery] = useState('');
-  const [posts, setPosts] = useState(announcements);
+  const [posts, setPosts] = useState(initialAnnouncements);
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalTitle, setModalTitle] = useState('');
-  const [modalBody, setModalBody] = useState(null);
-  const [formData, setFormData] = useState({ title: 'Barangay Cleanup Drive', date: 'Aug 5, 2026', priority: 'High' });
 
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, target: 'dashboard' },
@@ -48,29 +60,32 @@ export default function Announcements({ onLogout, onNavigateTo }) {
     { name: 'Settings', icon: Settings, target: 'settings' },
   ];
 
-  const openModal = (title, content) => {
-    setModalTitle(title);
-    setModalBody(content);
-    setModalOpen(true);
-  };
+  // Recalculate indicators dynamically
+  const summaryCards = useMemo(() => {
+    const scheduled = posts.length;
+    const highPriority = posts.filter((p) => p.priority === 'High').length;
 
-  const handleAddPost = (e) => {
-    e.preventDefault();
-    const newPost = {
-      title: formData.title,
-      date: formData.date,
-      priority: formData.priority,
-    };
-    setPosts((prev) => [newPost, ...prev]);
+    return [
+      { label: 'SCHEDULED', value: scheduled, tone: 'info' },
+      { label: 'HIGH PRIORITY', value: highPriority, tone: 'warning' },
+      { label: 'RESIDENTS REACH', value: '1.2K', tone: 'success' },
+    ];
+  }, [posts]);
+
+  const handleAddAnnouncement = (newPost) => {
+    const postWithId = { id: Date.now().toString(), ...newPost };
+    setPosts((prev) => [postWithId, ...prev]);
     setModalOpen(false);
   };
 
-  const filteredAnnouncements = posts.filter((item) => {
+  const filteredPosts = posts.filter((post) => {
     const query = searchQuery.toLowerCase();
     return (
-      item.title.toLowerCase().includes(query) ||
-      item.date.toLowerCase().includes(query) ||
-      item.priority.toLowerCase().includes(query)
+      post.title.toLowerCase().includes(query) ||
+      post.purpose.toLowerCase().includes(query) ||
+      post.targetAudience.toLowerCase().includes(query) ||
+      post.priority.toLowerCase().includes(query) ||
+      post.date.toLowerCase().includes(query)
     );
   });
 
@@ -140,12 +155,12 @@ export default function Announcements({ onLogout, onNavigateTo }) {
               <Search className="search-icon" />
               <input
                 type="text"
-                placeholder="Search announcements"
+                placeholder="Search announcements..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <button type="button" className="action-button" onClick={() => openModal('New Announcement', <form onSubmit={handleAddPost} style={{ display: 'grid', gap: '10px' }}><label>Title<input value={formData.title} onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))} style={modalInputStyle} /></label><label>Date<input value={formData.date} onChange={(e) => setFormData((prev) => ({ ...prev, date: e.target.value }))} style={modalInputStyle} /></label><label>Priority<select value={formData.priority} onChange={(e) => setFormData((prev) => ({ ...prev, priority: e.target.value }))} style={modalInputStyle}><option>High</option><option>Medium</option><option>Low</option></select></label><button type="submit" style={primaryButtonStyle}>Publish</button></form>)}>
+            <button type="button" className="action-button" onClick={() => setModalOpen(true)}>
               <Plus className="search-icon" />
               New Post
             </button>
@@ -156,10 +171,10 @@ export default function Announcements({ onLogout, onNavigateTo }) {
           <div className="hero-card">
             <div>
               <p className="eyebrow">PUBLIC NOTICE</p>
-              <h3>2 announcements scheduled</h3>
+              <h3>{posts.length} announcements scheduled</h3>
               <p>Keep residents informed about upcoming activities and advisories.</p>
             </div>
-            <div className="pill">Live updates</div>
+            <div className="pill-live">Live updates</div>
           </div>
 
           <div className="stats-row">
@@ -179,47 +194,119 @@ export default function Announcements({ onLogout, onNavigateTo }) {
             <table className="custom-table">
               <thead>
                 <tr>
-                  <th>Title</th>
-                  <th>Date</th>
-                  <th>Priority</th>
+                  <th>ANNOUNCEMENT TITLE</th>
+                  <th>PURPOSE & DETAILS</th>
+                  <th>TARGET AUDIENCE</th>
+                  <th>DATE</th>
+                  <th>PRIORITY</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredAnnouncements.map((item, index) => (
-                  <tr key={index}>
-                    <td>{item.title}</td>
-                    <td>{item.date}</td>
-                    <td>{item.priority}</td>
+                {filteredPosts.length > 0 ? (
+                  filteredPosts.map((post) => (
+                    <tr key={post.id}>
+                      <td className="post-title">{post.title}</td>
+                      <td className="post-purpose">{post.purpose}</td>
+                      <td>
+                        <span className="audience-badge">{post.targetAudience}</span>
+                      </td>
+                      <td className="post-date">{post.date}</td>
+                      <td>
+                        <span className={`priority-tag priority-${post.priority.toLowerCase()}`}>
+                          {post.priority}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="empty-state">No announcements found matching your filter.</td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
         </div>
       </main>
 
-      <Modal isOpen={modalOpen} title={modalTitle} onClose={() => setModalOpen(false)}>
-        {modalBody}
+      <Modal isOpen={modalOpen} title="New Announcement" onClose={() => setModalOpen(false)}>
+        <NewAnnouncementForm onSubmit={handleAddAnnouncement} />
       </Modal>
     </div>
   );
 }
 
-const modalInputStyle = {
-  width: '100%',
-  padding: '10px 12px',
-  borderRadius: '8px',
-  border: '1px solid #cbd5e1',
-  marginTop: '4px',
-};
+function NewAnnouncementForm({ onSubmit }) {
+  const [title, setTitle] = useState('');
+  const [purpose, setPurpose] = useState('');
+  const [targetAudience, setTargetAudience] = useState('All Barangay Residents');
+  const [date, setDate] = useState('');
+  const [priority, setPriority] = useState('High');
 
-const primaryButtonStyle = {
-  width: '100%',
-  padding: '10px 12px',
-  border: 'none',
-  borderRadius: '8px',
-  backgroundColor: '#0b194c',
-  color: '#ffffff',
-  cursor: 'pointer',
-  fontWeight: 600,
-};
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!title || !purpose || !date) return;
+    onSubmit({ title, purpose, targetAudience, date, priority });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="modal-form">
+      <label className="form-field">
+        <span>Announcement Title *</span>
+        <input
+          type="text"
+          placeholder="e.g. Barangay Vaccination Drive"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          required
+        />
+      </label>
+
+      <label className="form-field">
+        <span>Purpose & Details *</span>
+        <textarea
+          rows="3"
+          placeholder="Describe the main goal, required documents, or instructions for residents..."
+          value={purpose}
+          onChange={(e) => setPurpose(e.target.value)}
+          required
+        />
+      </label>
+
+      <label className="form-field">
+        <span>Target Audience</span>
+        <select value={targetAudience} onChange={(e) => setTargetAudience(e.target.value)}>
+          <option value="All Barangay Residents">All Barangay Residents</option>
+          <option value="Senior Citizens & Caregivers">Senior Citizens & Caregivers</option>
+          <option value="Youth & Students">Youth & Students</option>
+          <option value="Household Heads">Household Heads</option>
+          <option value="Business Owners">Business Owners</option>
+        </select>
+      </label>
+
+      <div className="form-row">
+        <label className="form-field">
+          <span>Schedule Date *</span>
+          <input
+            type="text"
+            placeholder="e.g. Aug 20, 2026"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            required
+          />
+        </label>
+
+        <label className="form-field">
+          <span>Priority Level</span>
+          <select value={priority} onChange={(e) => setPriority(e.target.value)}>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
+        </label>
+      </div>
+
+      <button type="submit" className="submit-btn">Publish Announcement</button>
+    </form>
+  );
+}636+69

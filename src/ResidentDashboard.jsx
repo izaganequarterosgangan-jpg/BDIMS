@@ -286,7 +286,7 @@ export default function ResidentDashboard({ onLogout, onBackToDashboard, onNavig
                   <ChevronDown className="select-arrow" />
                 </div>
 
-                <div className="select-wrapper">
+                <div  className="select-wrapper">
                   <select className="select-box">
                     <option>All</option>
                   </select>

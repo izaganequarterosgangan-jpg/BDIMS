@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import './Blotter.css';
 import logo from './assets/Logo.png';
 import Modal from './components/Modal.jsx';
@@ -16,26 +16,17 @@ import {
   Plus,
 } from 'lucide-react';
 
-const blotterCases = [
+const initialCases = [
   { id: 'BLT-001', title: 'Noise Complaint', resident: 'Roberto Lim', date: 'Aug 2, 2026', status: 'Open' },
   { id: 'BLT-002', title: 'Property Dispute', resident: 'Carmen Villanueva', date: 'Aug 1, 2026', status: 'Under Review' },
   { id: 'BLT-003', title: 'Animal Disturbance', resident: 'Eduardo Flores', date: 'Jul 31, 2026', status: 'Resolved' },
 ];
 
-const summaryCards = [
-  { label: 'Open Cases', value: '3', tone: 'warning' },
-  { label: 'Resolved', value: '5', tone: 'success' },
-  { label: 'Pending Review', value: '2', tone: 'info' },
-];
-
 export default function Blotter({ onLogout, onNavigateTo }) {
   const [activeTab, setActiveTab] = useState('Blotter');
   const [searchQuery, setSearchQuery] = useState('');
-  const [casesList, setCasesList] = useState(blotterCases);
+  const [casesList, setCasesList] = useState(initialCases);
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalTitle, setModalTitle] = useState('');
-  const [modalBody, setModalBody] = useState(null);
-  const [formData, setFormData] = useState({ title: 'Noise Complaint', resident: 'Roberto Lim', status: 'Open' });
 
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, target: 'dashboard' },
@@ -48,20 +39,26 @@ export default function Blotter({ onLogout, onNavigateTo }) {
     { name: 'Settings', icon: Settings, target: 'settings' },
   ];
 
-  const openModal = (title, content) => {
-    setModalTitle(title);
-    setModalBody(content);
-    setModalOpen(true);
-  };
+  // Dynamic status counters based on actual state
+  const summaryCards = useMemo(() => {
+    const open = casesList.filter((c) => c.status === 'Open').length;
+    const review = casesList.filter((c) => c.status === 'Under Review').length;
+    const resolved = casesList.filter((c) => c.status === 'Resolved').length;
 
-  const handleAddCase = (e) => {
-    e.preventDefault();
+    return [
+      { label: 'Open Cases', value: open, tone: 'warning' },
+      { label: 'Pending Review', value: review, tone: 'info' },
+      { label: 'Resolved', value: resolved, tone: 'success' },
+    ];
+  }, [casesList]);
+
+  const handleAddCaseSubmit = (newCaseData) => {
     const newCase = {
-      id: `BLT-${Date.now().toString().slice(-3)}`,
-      title: formData.title,
-      resident: formData.resident,
+      id: `BLT-${Math.floor(100 + Math.random() * 900)}`,
+      title: newCaseData.title,
+      resident: newCaseData.resident,
       date: 'Just now',
-      status: formData.status,
+      status: newCaseData.status,
     };
     setCasesList((prev) => [newCase, ...prev]);
     setModalOpen(false);
@@ -143,12 +140,12 @@ export default function Blotter({ onLogout, onNavigateTo }) {
               <Search className="search-icon" />
               <input
                 type="text"
-                placeholder="Search cases"
+                placeholder="Search cases..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <button type="button" className="action-button" onClick={() => openModal('Add Case', <form onSubmit={handleAddCase} style={{ display: 'grid', gap: '10px' }}><label>Incident<input value={formData.title} onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))} style={modalInputStyle} /></label><label>Resident<input value={formData.resident} onChange={(e) => setFormData((prev) => ({ ...prev, resident: e.target.value }))} style={modalInputStyle} /></label><label>Status<select value={formData.status} onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value }))} style={modalInputStyle}><option>Open</option><option>Under Review</option><option>Resolved</option></select></label><button type="submit" style={primaryButtonStyle}>Save</button></form>)}>
+            <button type="button" className="action-button" onClick={() => setModalOpen(true)}>
               <Plus className="search-icon" />
               Add Case
             </button>
@@ -159,7 +156,7 @@ export default function Blotter({ onLogout, onNavigateTo }) {
           <div className="hero-card">
             <div>
               <p className="eyebrow">CASE MONITOR</p>
-              <h3>2 cases need attention</h3>
+              <h3>{summaryCards[0].value + summaryCards[1].value} cases need attention</h3>
               <p>Keep track of open incidents and recent updates.</p>
             </div>
             <div className="pill">High priority</div>
@@ -177,7 +174,6 @@ export default function Blotter({ onLogout, onNavigateTo }) {
           <div className="table-card">
             <div className="table-header">
               <h4>Recent Blotter Cases</h4>
-              <button type="button" className="secondary-btn">Review</button>
             </div>
             <table className="custom-table">
               <thead>
@@ -190,43 +186,80 @@ export default function Blotter({ onLogout, onNavigateTo }) {
                 </tr>
               </thead>
               <tbody>
-                {filteredCases.map((item) => (
-                  <tr key={item.id}>
-                    <td>{item.id}</td>
-                    <td>{item.title}</td>
-                    <td>{item.resident}</td>
-                    <td>{item.date}</td>
-                    <td>{item.status}</td>
+                {filteredCases.length > 0 ? (
+                  filteredCases.map((item) => (
+                    <tr key={item.id}>
+                      <td className="case-id">{item.id}</td>
+                      <td>{item.title}</td>
+                      <td>{item.resident}</td>
+                      <td>{item.date}</td>
+                      <td>
+                        <span className={`status-tag status-${item.status.toLowerCase().replace(/\s+/g, '-')}`}>
+                          {item.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="empty-state">No cases found.</td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
         </div>
       </main>
 
-      <Modal isOpen={modalOpen} title={modalTitle} onClose={() => setModalOpen(false)}>
-        {modalBody}
+      <Modal isOpen={modalOpen} title="Add Case" onClose={() => setModalOpen(false)}>
+        <AddCaseForm onSubmit={handleAddCaseSubmit} />
       </Modal>
     </div>
   );
 }
 
-const modalInputStyle = {
-  width: '100%',
-  padding: '10px 12px',
-  borderRadius: '8px',
-  border: '1px solid #cbd5e1',
-  marginTop: '4px',
-};
+function AddCaseForm({ onSubmit }) {
+  const [title, setTitle] = useState('');
+  const [resident, setResident] = useState('');
+  const [status, setStatus] = useState('Open');
 
-const primaryButtonStyle = {
-  width: '100%',
-  padding: '10px 12px',
-  border: 'none',
-  borderRadius: '8px',
-  backgroundColor: '#0b194c',
-  color: '#ffffff',
-  cursor: 'pointer',
-  fontWeight: 600,
-};
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!title || !resident) return;
+    onSubmit({ title, resident, status });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="modal-form">
+      <label className="form-field">
+        <span>Incident</span>
+        <input
+          type="text"
+          placeholder="e.g. Noise Complaint"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          required
+        />
+      </label>
+      <label className="form-field">
+        <span>Resident</span>
+        <input
+          type="text"
+          placeholder="Resident Name"
+          value={resident}
+          onChange={(e) => setResident(e.target.value)}
+          required
+        />
+      </label>
+      <label className="form-field">
+        <span>Status</span>
+        <select value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option value="Open">Open</option>
+          <option value="Under Review">Under Review</option>
+          <option value="Resolved">Resolved</option>
+        </select>
+      </label>
+      <button type="submit" className="submit-btn">Save Case</button>
+    </form>
+  );
+}

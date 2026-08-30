@@ -14,28 +14,32 @@ import {
   LogOut,
   Search,
   Plus,
+  Download,
+  Eye,
+  Trash2,
+  FileSpreadsheet
 } from 'lucide-react';
 
-const reports = [
-  { title: 'Monthly Summary', date: 'Aug 1, 2026', status: 'Prepared' },
-  { title: 'Residents Growth Report', date: 'Jul 30, 2026', status: 'Pending Review' },
-  { title: 'Document Processing Report', date: 'Jul 28, 2026', status: 'Ready' },
-];
-
-const summaryCards = [
-  { label: 'Prepared', value: '8', tone: 'success' },
-  { label: 'Pending', value: '2', tone: 'warning' },
-  { label: 'Exported', value: '14', tone: 'info' },
+const initialReports = [
+  { id: 1, title: 'Monthly Summary', date: 'Aug 1, 2026', status: 'Prepared' },
+  { id: 2, title: 'Residents Growth Report', date: 'Jul 30, 2026', status: 'Pending Review' },
+  { id: 3, title: 'Document Processing Report', date: 'Jul 28, 2026', status: 'Ready' },
 ];
 
 export default function Reports({ onLogout, onNavigateTo }) {
   const [activeTab, setActiveTab] = useState('Reports');
   const [searchQuery, setSearchQuery] = useState('');
-  const [reportsList, setReportsList] = useState(reports);
+  const [reportsList, setReportsList] = useState(initialReports);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
   const [modalBody, setModalBody] = useState(null);
-  const [formData, setFormData] = useState({ title: 'Monthly Summary', date: 'Aug 1, 2026', status: 'Prepared' });
+  
+  // Form State
+  const [formData, setFormData] = useState({ 
+    title: '', 
+    date: new Date().toISOString().split('T')[0], 
+    status: 'Prepared' 
+  });
 
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, target: 'dashboard' },
@@ -48,21 +52,73 @@ export default function Reports({ onLogout, onNavigateTo }) {
     { name: 'Settings', icon: Settings, target: 'settings' },
   ];
 
-  const openModal = (title, content) => {
-    setModalTitle(title);
-    setModalBody(content);
+  // Dynamic calculations for stats
+  const preparedCount = reportsList.filter(r => r.status === 'Prepared' || r.status === 'Ready').length;
+  const pendingCount = reportsList.filter(r => r.status === 'Pending Review').length;
+  const totalCount = reportsList.length;
+
+  const summaryCards = [
+    { label: 'Prepared / Ready', value: preparedCount.toString(), tone: 'success' },
+    { label: 'Pending Review', value: pendingCount.toString(), tone: 'warning' },
+    { label: 'Total Reports', value: totalCount.toString(), tone: 'info' },
+  ];
+
+  const handleOpenGenerateModal = () => {
+    setFormData({ title: '', date: new Date().toISOString().split('T')[0], status: 'Prepared' });
+    setModalTitle('Generate New Report');
     setModalOpen(true);
   };
 
   const handleAddReport = (e) => {
     e.preventDefault();
+    if (!formData.title.trim()) return;
+
     const newReport = {
+      id: Date.now(),
       title: formData.title,
       date: formData.date,
       status: formData.status,
     };
+
     setReportsList((prev) => [newReport, ...prev]);
     setModalOpen(false);
+  };
+
+  const handleDeleteReport = (id) => {
+    setReportsList((prev) => prev.filter((report) => report.id !== id));
+  };
+
+  const handleViewReport = (report) => {
+    setModalTitle(`View Report: ${report.title}`);
+    setModalBody(
+      <div className="report-view-details">
+        <p><strong>Title:</strong> {report.title}</p>
+        <p><strong>Date Generated:</strong> {report.date}</p>
+        <p><strong>Status:</strong> {report.status}</p>
+        <p className="report-placeholder-text">
+          This report contains dynamic aggregate data from the BIDMS system databases including resident counts, document processing metrics, and clearance issuances.
+        </p>
+      </div>
+    );
+    setModalOpen(true);
+  };
+
+  // Export filtered table data to CSV file
+  const handleExportCSV = () => {
+    if (filteredReports.length === 0) {
+      alert("No data available to export.");
+      return;
+    }
+
+    const headers = ["Report Title,Date,Status\n"];
+    const rows = filteredReports.map(r => `"${r.title}","${r.date}","${r.status}"\n`);
+    const blob = new Blob([...headers, ...rows], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `BIDMS_Reports_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   const filteredReports = reportsList.filter((item) => {
@@ -140,12 +196,12 @@ export default function Reports({ onLogout, onNavigateTo }) {
               <Search className="search-icon" />
               <input
                 type="text"
-                placeholder="Search reports"
+                placeholder="Search reports..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <button type="button" className="action-button" onClick={() => openModal('Generate Report', <form onSubmit={handleAddReport} style={{ display: 'grid', gap: '10px' }}><label>Report Name<input value={formData.title} onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))} style={modalInputStyle} /></label><label>Date<input value={formData.date} onChange={(e) => setFormData((prev) => ({ ...prev, date: e.target.value }))} style={modalInputStyle} /></label><label>Status<select value={formData.status} onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value }))} style={modalInputStyle}><option>Prepared</option><option>Pending Review</option><option>Ready</option></select></label><button type="submit" style={primaryButtonStyle}>Generate</button></form>)}>
+            <button type="button" className="action-button" onClick={handleOpenGenerateModal}>
               <Plus className="search-icon" />
               Generate
             </button>
@@ -156,7 +212,7 @@ export default function Reports({ onLogout, onNavigateTo }) {
           <div className="hero-card">
             <div>
               <p className="eyebrow">REPORT CENTER</p>
-              <h3>2 reports available</h3>
+              <h3>{reportsList.length} report{reportsList.length !== 1 ? 's' : ''} available</h3>
               <p>Generate and review essential barangay summaries.</p>
             </div>
             <div className="pill">Fresh data</div>
@@ -174,24 +230,59 @@ export default function Reports({ onLogout, onNavigateTo }) {
           <div className="table-card">
             <div className="table-header">
               <h4>Recent Reports</h4>
-              <button type="button" className="secondary-btn">Export</button>
+              <button type="button" className="secondary-btn" onClick={handleExportCSV}>
+                <FileSpreadsheet className="nav-icon" /> Export
+              </button>
             </div>
             <table className="custom-table">
               <thead>
                 <tr>
-                  <th>Report</th>
+                  <th>Report Name</th>
                   <th>Date</th>
                   <th>Status</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredReports.map((item, index) => (
-                  <tr key={index}>
-                    <td>{item.title}</td>
-                    <td>{item.date}</td>
-                    <td>{item.status}</td>
+                {filteredReports.length > 0 ? (
+                  filteredReports.map((item) => (
+                    <tr key={item.id}>
+                      <td className="report-title-cell">{item.title}</td>
+                      <td>{item.date}</td>
+                      <td>
+                        <span className={`status-badge ${item.status.toLowerCase().replace(/\s+/g, '-')}`}>
+                          {item.status}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <div className="action-buttons-group">
+                          <button
+                            type="button"
+                            className="icon-btn view"
+                            title="View Report"
+                            onClick={() => handleViewReport(item)}
+                          >
+                            <Eye size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            className="icon-btn delete"
+                            title="Delete Report"
+                            onClick={() => handleDeleteReport(item.id)}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="empty-table-msg">
+                      No reports found matching your search.
+                    </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -199,27 +290,49 @@ export default function Reports({ onLogout, onNavigateTo }) {
       </main>
 
       <Modal isOpen={modalOpen} title={modalTitle} onClose={() => setModalOpen(false)}>
-        {modalBody}
+        {modalTitle === 'Generate New Report' ? (
+          <form onSubmit={handleAddReport} className="modal-form">
+            <div className="form-group">
+              <label>Report Name</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Q3 Demographic Summary"
+                value={formData.title}
+                onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
+                className="modal-input"
+              />
+            </div>
+            <div className="form-group">
+              <label>Date</label>
+              <input
+                type="date"
+                required
+                value={formData.date}
+                onChange={(e) => setFormData((prev) => ({ ...prev, date: e.target.value }))}
+                className="modal-input"
+              />
+            </div>
+            <div className="form-group">
+              <label>Status</label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value }))}
+                className="modal-input"
+              >
+                <option value="Prepared">Prepared</option>
+                <option value="Pending Review">Pending Review</option>
+                <option value="Ready">Ready</option>
+              </select>
+            </div>
+            <button type="submit" className="modal-submit-btn">
+              Generate Report
+            </button>
+          </form>
+        ) : (
+          modalBody
+        )}
       </Modal>
     </div>
   );
 }
-
-const modalInputStyle = {
-  width: '100%',
-  padding: '10px 12px',
-  borderRadius: '8px',
-  border: '1px solid #cbd5e1',
-  marginTop: '4px',
-};
-
-const primaryButtonStyle = {
-  width: '100%',
-  padding: '10px 12px',
-  border: 'none',
-  borderRadius: '8px',
-  backgroundColor: '#0b194c',
-  color: '#ffffff',
-  cursor: 'pointer',
-  fontWeight: 600,
-};
