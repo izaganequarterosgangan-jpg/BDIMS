@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './Settings.css';
 import logo from './assets/Logo.png';
+import TopHeader from './components/TopHeader.jsx';
 import Modal from './components/Modal.jsx';
 import {
   LayoutDashboard,
@@ -12,7 +13,6 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  Search,
   Building,
   FileCheck,
   ShieldCheck,
@@ -143,21 +143,12 @@ export default function SettingsPage({ onLogout, onNavigateTo }) {
       </aside>
 
       <main className="main-content">
-        <header className="top-header">
-          <div>
-            <h2 className="header-title">Settings</h2>
-            <p className="header-subtitle">Configure barangay operational preferences and rules.</p>
-          </div>
-          <div className="header-actions">
-            <div className="search-box">
-              <Search className="search-icon" />
-              <input type="text" placeholder="Search settings..." />
-            </div>
-            <button type="button" className="action-button" onClick={handleSaveSettings}>
-              <Save size={16} /> Save Changes
-            </button>
-          </div>
-        </header>
+        <TopHeader
+          title="Settings"
+          subtitle="Configure barangay operational preferences and rules."
+          searchPlaceholder="Search settings..."
+          actions={<button type="button" className="action-button" onClick={handleSaveSettings}><Save size={16} />Save Changes</button>}
+        />
 
         {saveSuccess && (
           <div className="toast-success">

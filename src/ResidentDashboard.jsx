@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './ResidentDashboard.css'; // Importing the explicit CSS stylesheet
 import logo from './assets/Logo.png';
 import Modal from './components/Modal.jsx';
+import TopHeader from './components/TopHeader.jsx';
 import {
   LayoutDashboard,
   Users,
@@ -13,9 +14,11 @@ import {
   Settings,
   LogOut,
   Search,
-  Bell,
   Plus,
-  ChevronDown
+  ChevronDown,
+  Eye,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 
 const residentsData = [
@@ -35,6 +38,7 @@ export default function ResidentDashboard({ onLogout, onBackToDashboard, onNavig
   const [modalTitle, setModalTitle] = useState('');
   const [modalBody, setModalBody] = useState(null);
   const [residentForm, setResidentForm] = useState({ name: '', id: '', purok: '', contact: '', status: 'Active' });
+  const [residentToDelete, setResidentToDelete] = useState(null);
 
   const openModal = (title, content) => {
     setModalTitle(title);
@@ -109,6 +113,11 @@ export default function ResidentDashboard({ onLogout, onBackToDashboard, onNavig
         <button type="submit" style={primaryButtonStyle}>Update</button>
       </form>
     );
+  };
+
+  const handleDeleteResident = () => {
+    setResidents((prev) => prev.filter((resident) => resident.id !== residentToDelete.id));
+    setResidentToDelete(null);
   };
 
   return (
@@ -192,40 +201,12 @@ export default function ResidentDashboard({ onLogout, onBackToDashboard, onNavig
       {/* MAIN CONTENT AREA */}
       <main className="main-wrapper">
         
-        {/* Top Header */}
-        <header className="top-header">
-          <div>
-            <h2 className="header-title">Residents</h2>
-            <p className="header-subtitle">
-              Tuesday, July 30, 2024 · Barangay San Isidro, Quezon City
-            </p>
-          </div>
-
-          <div className="header-actions">
-            {/* Search Input */}
-            <div className="search-box-header">
-              <Search className="search-icon-input" />
-              <input
-                type="text"
-                placeholder="Search residents, docs..."
-                className="search-input"
-              />
-            </div>
-
-            <div className="header-user-actions">
-              {/* Notification Bell */}
-              <button className="notification-button" title="Notifications">
-                <Bell style={{ width: '16px', height: '16px' }} />
-                <span className="dot-notification"></span>
-              </button>
-
-              {/* Profile Avatar */}
-              <div className="header-avatar" title="Juan Cruz">
-                JC
-              </div>
-            </div>
-          </div>
-        </header>
+        <TopHeader
+          title="Residents"
+          subtitle="Tuesday, July 30, 2024 · Barangay San Isidro, Quezon City"
+          searchQuery={searchQuery}
+          onSearchChange={(e) => setSearchQuery(e.target.value)}
+        />
 
         {/* Content Body */}
         <div className="content-body">
@@ -234,7 +215,7 @@ export default function ResidentDashboard({ onLogout, onBackToDashboard, onNavig
           <div className="action-header">
             <div>
               <h3 className="registry-title">Resident Registry</h3>
-              <p className="registry-subtitle">12 total registered residents</p>
+              <p className="registry-subtitle">{residents.length} total registered residents</p>
             </div>
             <button className="btn-add-resident" onClick={() => openModal('Add Resident', <form onSubmit={handleAddResident} style={{ display: 'grid', gap: '10px' }}><label>Full Name<input value={residentForm.name} onChange={(e) => setResidentForm((prev) => ({ ...prev, name: e.target.value }))} placeholder="Juan dela Cruz" style={modalInputStyle} /></label><label>Resident ID<input value={residentForm.id} onChange={(e) => setResidentForm((prev) => ({ ...prev, id: e.target.value }))} placeholder="RES-007" style={modalInputStyle} /></label><label>Purok<input value={residentForm.purok} onChange={(e) => setResidentForm((prev) => ({ ...prev, purok: e.target.value }))} placeholder="Purok 3" style={modalInputStyle} /></label><label>Contact<input value={residentForm.contact} onChange={(e) => setResidentForm((prev) => ({ ...prev, contact: e.target.value }))} placeholder="0917xxxxxxx" style={modalInputStyle} /></label><label>Status<select value={residentForm.status} onChange={(e) => setResidentForm((prev) => ({ ...prev, status: e.target.value }))} style={modalInputStyle}><option>Active</option><option>Inactive</option></select></label><button type="submit" style={primaryButtonStyle}>Save Resident</button></form>)}>
               <Plus style={{ width: '16px', height: '16px' }} />
@@ -245,19 +226,19 @@ export default function ResidentDashboard({ onLogout, onBackToDashboard, onNavig
           {/* Metric Cards */}
           <div className="metrics-grid">
             <div className="metric-card">
-              <p className="metric-value text-blue-dark">12</p>
+              <p className="metric-value text-blue-dark">{residents.length}</p>
               <p className="metric-label">Total</p>
             </div>
             <div className="metric-card">
-              <p className="metric-value text-emerald">10</p>
+              <p className="metric-value text-emerald">{residents.filter((resident) => resident.status === 'Active').length}</p>
               <p className="metric-label">Active</p>
             </div>
             <div className="metric-card">
-              <p className="metric-value text-purple">9</p>
+              <p className="metric-value text-purple">{residents.filter((resident) => resident.voter).length}</p>
               <p className="metric-label">Registered Voters</p>
             </div>
             <div className="metric-card">
-              <p className="metric-value text-amber">3</p>
+              <p className="metric-value text-amber">{residents.filter((resident) => Number.parseInt(resident.ageSex, 10) >= 60).length}</p>
               <p className="metric-label">Senior Citizens</p>
             </div>
           </div>
@@ -293,7 +274,7 @@ export default function ResidentDashboard({ onLogout, onBackToDashboard, onNavig
                   <ChevronDown className="select-arrow" />
                 </div>
 
-                <span>12 results</span>
+                <span>{filteredResidents.length} results</span>
               </div>
             </div>
 
@@ -346,9 +327,9 @@ export default function ResidentDashboard({ onLogout, onBackToDashboard, onNavig
                         </span>
                       </td>
                       <td className="action-buttons">
-                        <button className="btn-action" onClick={() => openModal('Resident Details', <div style={{ display: 'grid', gap: '10px' }}><p><strong>Name:</strong> {row.name}</p><p><strong>ID:</strong> {row.id}</p><p><strong>Contact:</strong> {row.contact}</p><p><strong>Status:</strong> {row.status}</p></div>)}>View</button>
-                        <span className="action-divider">·</span>
-                        <button className="btn-action" onClick={() => handleEditResident(row)}>Edit</button>
+                        <button className="btn-action icon-action" onClick={() => openModal('Resident Details', <div style={{ display: 'grid', gap: '10px' }}><p><strong>Name:</strong> {row.name}</p><p><strong>ID:</strong> {row.id}</p><p><strong>Contact:</strong> {row.contact}</p><p><strong>Status:</strong> {row.status}</p></div>)} title={`View ${row.name}`} aria-label={`View ${row.name}`}><Eye size={16} /></button>
+                        <button className="btn-action icon-action" onClick={() => handleEditResident(row)} title={`Edit ${row.name}`} aria-label={`Edit ${row.name}`}><Pencil size={16} /></button>
+                        <button className="btn-action icon-action delete-action" onClick={() => setResidentToDelete(row)} title={`Remove ${row.name}`} aria-label={`Remove ${row.name}`}><Trash2 size={16} /></button>
                       </td>
                     </tr>
                   ))}
@@ -363,6 +344,16 @@ export default function ResidentDashboard({ onLogout, onBackToDashboard, onNavig
 
       <Modal isOpen={modalOpen} title={modalTitle} onClose={() => setModalOpen(false)}>
         {modalBody}
+      </Modal>
+      <Modal isOpen={Boolean(residentToDelete)} title="Remove Resident" onClose={() => setResidentToDelete(null)}>
+        <div className="delete-confirmation">
+          <p>Remove {residentToDelete?.name} from the resident registry?</p>
+          <p className="delete-confirmation-note">This only removes the record from the current session.</p>
+          <div className="delete-confirmation-actions">
+            <button type="button" className="secondary-modal-btn" onClick={() => setResidentToDelete(null)}>Cancel</button>
+            <button type="button" className="danger-modal-btn" onClick={handleDeleteResident}>Remove Resident</button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

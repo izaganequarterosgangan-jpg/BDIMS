@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './Dashboard.css';
 import logo from './assets/Logo.png';
+import TopHeader from './components/TopHeader.jsx';
 import {
   LayoutDashboard,
   Users,
@@ -11,8 +12,6 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  Search,
-  Bell,
   Plus,
   FileCheck,
   UserPlus,
@@ -114,29 +113,12 @@ export default function Dashboard({ onLogout, onNavigateTo }) {
       {/* MAIN WRAPPER */}
       <div className="main-wrapper">
         {/* TOP HEADER */}
-        <header className="top-header">
-          <div>
-            <h2 className="header-title">Dashboard</h2>
-            <p className="header-subtitle">Tuesday, July 30, 2024 · Barangay San Isidro, Quezon City</p>
-          </div>
-          <div className="header-actions">
-            <div className="search-box-header">
-              <Search className="search-icon-input" />
-              <input
-                type="text"
-                className="search-input"
-                placeholder="Search residents, docs..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <button type="button" className="notification-button" title="Notifications">
-              <Bell size={18} />
-              <span className="dot-notification"></span>
-            </button>
-            <div className="header-avatar">JC</div>
-          </div>
-        </header>
+        <TopHeader
+          title="Dashboard"
+          subtitle="Tuesday, July 30, 2024 · Barangay San Isidro, Quezon City"
+          searchQuery={searchQuery}
+          onSearchChange={(e) => setSearchQuery(e.target.value)}
+        />
 
         {/* CONTENT AREA */}
         <main className="content-area">

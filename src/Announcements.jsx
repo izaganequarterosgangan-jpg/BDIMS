@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import './Announcements.css';
 import logo from './assets/Logo.png';
 import Modal from './components/Modal.jsx';
+import TopHeader from './components/TopHeader.jsx';
 import {
   LayoutDashboard,
   Users,
@@ -12,7 +13,6 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  Search,
   Plus,
 } from 'lucide-react';
 
@@ -145,27 +145,14 @@ export default function Announcements({ onLogout, onNavigateTo }) {
       </aside>
 
       <main className="main-content">
-        <header className="top-header">
-          <div>
-            <h2 className="header-title">Announcements</h2>
-            <p className="header-subtitle">Post and monitor barangay announcements.</p>
-          </div>
-          <div className="header-actions">
-            <div className="search-box">
-              <Search className="search-icon" />
-              <input
-                type="text"
-                placeholder="Search announcements..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <button type="button" className="action-button" onClick={() => setModalOpen(true)}>
-              <Plus className="search-icon" />
-              New Post
-            </button>
-          </div>
-        </header>
+        <TopHeader
+          title="Announcements"
+          subtitle="Post and monitor barangay announcements."
+          searchQuery={searchQuery}
+          onSearchChange={(e) => setSearchQuery(e.target.value)}
+          searchPlaceholder="Search announcements..."
+          actions={<button type="button" className="action-button" onClick={() => setModalOpen(true)}><Plus className="search-icon" />New Post</button>}
+        />
 
         <div className="content-area">
           <div className="hero-card">

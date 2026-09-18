@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import './Blotter.css';
 import logo from './assets/Logo.png';
 import Modal from './components/Modal.jsx';
+import TopHeader from './components/TopHeader.jsx';
 import {
   LayoutDashboard,
   Users,
@@ -12,7 +13,6 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  Search,
   Plus,
 } from 'lucide-react';
 
@@ -130,27 +130,14 @@ export default function Blotter({ onLogout, onNavigateTo }) {
       </aside>
 
       <main className="main-content">
-        <header className="top-header">
-          <div>
-            <h2 className="header-title">Blotter</h2>
-            <p className="header-subtitle">Manage blotter incidents and case updates.</p>
-          </div>
-          <div className="header-actions">
-            <div className="search-box">
-              <Search className="search-icon" />
-              <input
-                type="text"
-                placeholder="Search cases..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <button type="button" className="action-button" onClick={() => setModalOpen(true)}>
-              <Plus className="search-icon" />
-              Add Case
-            </button>
-          </div>
-        </header>
+        <TopHeader
+          title="Blotter"
+          subtitle="Manage blotter incidents and case updates."
+          searchQuery={searchQuery}
+          onSearchChange={(e) => setSearchQuery(e.target.value)}
+          searchPlaceholder="Search cases..."
+          actions={<button type="button" className="action-button" onClick={() => setModalOpen(true)}><Plus className="search-icon" />Add Case</button>}
+        />
 
         <div className="content-area">
           <div className="hero-card">
