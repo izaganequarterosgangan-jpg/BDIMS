@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './Documents.css';
 import logo from './assets/Logo.png';
 import Modal from './components/Modal.jsx';
+import TopHeader from './components/TopHeader.jsx';
 import {
   LayoutDashboard,
   Users,
@@ -12,7 +13,6 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  Search,
   Plus,
   Printer,
   Eye,
@@ -266,27 +266,14 @@ export default function Documents({ onLogout, onNavigateTo }) {
       </aside>
 
       <main className="main-content">
-        <header className="top-header">
-          <div>
-            <h2 className="header-title">Documents</h2>
-            <p className="header-subtitle">Track and process document requests for residents.</p>
-          </div>
-          <div className="header-actions">
-            <div className="search-box">
-              <Search className="search-icon" />
-              <input
-                type="text"
-                placeholder="Search documents..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <button type="button" className="action-button" onClick={openNewRequestModal}>
-              <Plus className="btn-icon" />
-              New Request
-            </button>
-          </div>
-        </header>
+        <TopHeader
+          title="Documents"
+          subtitle="Track and process document requests for residents."
+          searchQuery={searchQuery}
+          onSearchChange={(e) => setSearchQuery(e.target.value)}
+          searchPlaceholder="Search documents..."
+          actions={<button type="button" className="action-button" onClick={openNewRequestModal}><Plus className="btn-icon" />New Request</button>}
+        />
 
         <div className="content-area">
           <div className="hero-card">

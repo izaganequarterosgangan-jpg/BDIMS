@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './Reports.css';
 import logo from './assets/Logo.png';
 import Modal from './components/Modal.jsx';
+import TopHeader from './components/TopHeader.jsx';
 import {
   LayoutDashboard,
   Users,
@@ -12,7 +13,6 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  Search,
   Plus,
   Download,
   Eye,
@@ -186,27 +186,14 @@ export default function Reports({ onLogout, onNavigateTo }) {
       </aside>
 
       <main className="main-content">
-        <header className="top-header">
-          <div>
-            <h2 className="header-title">Reports</h2>
-            <p className="header-subtitle">Review summaries and performance insights.</p>
-          </div>
-          <div className="header-actions">
-            <div className="search-box">
-              <Search className="search-icon" />
-              <input
-                type="text"
-                placeholder="Search reports..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <button type="button" className="action-button" onClick={handleOpenGenerateModal}>
-              <Plus className="search-icon" />
-              Generate
-            </button>
-          </div>
-        </header>
+        <TopHeader
+          title="Reports"
+          subtitle="Review summaries and performance insights."
+          searchQuery={searchQuery}
+          onSearchChange={(e) => setSearchQuery(e.target.value)}
+          searchPlaceholder="Search reports..."
+          actions={<button type="button" className="action-button" onClick={handleOpenGenerateModal}><Plus className="search-icon" />Generate</button>}
+        />
 
         <div className="content-area">
           <div className="hero-card">
